@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentire Journal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #fdfaf6;
+            --text-color: #4a4a4a;
+            --primary-color: #e57373;
+            --accent-color: #ffab73;
+            --border-color: #ddd;
+            --font-family: 'Lato', sans-serif;
+            --sidebar-width: 250px;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        /* --- Alert Banners (Feature 6) --- */
+        #alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            color: white;
+            display: none; /* Hidden by default */
+        }
+        #alert-banner.orange {
+            background-color: #ffa726; /* Orange */
+        }
+        #alert-banner.red {
+            background-color: #e53935; /* Red */
+        }
+
+        /* --- Sidebar (Feature 4) --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: #f4f4f4;
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        #sidebar h2 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        #month-select-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        #month-select {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        #log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            height: calc(100vh - 200px); /* Adjust as needed */
+        }
+        #log-list li {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #log-list li:hover {
+            background-color: #fafafa;
+        }
+        #log-list .log-day {
+            font-weight: 700;
+            display: block;
+        }
+        #log-list .log-date {
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        /* --- Main Content --- */
+        .container {
+            flex-grow: 1;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* For analysis box */
+        }
+        .main-content {
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        #journal-entry {
+            width: 100%;
+            height: 300px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: vertical;
+            background-color: #fff;
+            transition: all 0.3s ease-in-out;
+            box-sizing: border-box;
+        }
+        #journal-entry:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px 3px rgba(255, 171, 115, 0.5);
+        }
+        #submit-button {
+            display: block;
+            margin: 1.5rem auto 0 auto;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #submit-button.loading {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #status-message {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1rem;
+        }
+        .success { color: #2e7d32; }
+        .error { color: #d32f2f; }
+        
+        /* --- Quote (Feature 1) --- */
+        footer {
+            position: fixed;
+            bottom: 20px;
+            left: var(--sidebar-width);
+            right: 0;
+            text-align: center;
+        }
+        #quote-text {
+            color: #aaa;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* --- Analysis Box (Feature 5) --- */
+        #analysis-box {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+        }
+        #analysis-box h3 {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        #analysis-select {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        #analysis-content {
+            background-color: #fafafa;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            min-height: 100px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alert-banner"></div>
+
+    <nav id="sidebar">
+        <h2>My Logs</h2>
+        <label for="month-select" id="month-select-label">View by Month</label>
+        <select id="month-select" name="month">
+            </select>
+        <ul id="log-list">
+            <li>Loading...</li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="main-content">
+            <h1>Welcome, how are you feeling today?</h1>
+            
+            <form id="journal-form">
+                <textarea id="journal-entry" placeholder="Let your thoughts flow freely..."></textarea>
+                <button type="submit" id="submit-button">Log My Feelings</button>
+            </form>
+            
+            <div id="status-message"></div>
+        </div>
+
+        <aside id="analysis-box">
+            <h3>View Analysis</h3>
+            <select id="analysis-select" name="period">
+                <option value="today">Today</option>
+                <option value="this-week">This Week</option>
+                <option value="this-month">This Month</option>
+                <option value="6-months">Last 6 Months</option>
+            </select>
+            <div id="analysis-content">
+                <p>Select a period to view your analysis.</p>
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p id="quote-text">"The best way to get started is to quit talking and begin doing." - Walt Disney</p>
+    </footer>
+
+<script>
+    // --- API CONFIGURATION ---
+    const API_BASE_URL = 'https://a3zrv1v72g.execute-api.ap-south-1.amazonaws.com/prod';
+    const API_URLS = {
+        submitEntry: `${API_BASE_URL}/entry`,
+        getEntries: `${API_BASE_URL}/entries`,
+        getAnalysis: `${API_BASE_URL}/analysis`
+    };
+
+    // --- FEATURE 1: QUOTE ROTATOR ---
+    const quotes = [
+        "The best way to get started is to quit talking and begin doing. - Walt Disney",
+        "You don't have to be great to start, but you have to start to be great. - Zig Ziglar",
+        "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+        "It does not matter how slowly you go as long as you do not stop. - Confucius",
+        "Your limitation—it's only your imagination."
+    ];
+   
+    // --- FEATURE 2: SUCCESS MESSAGE ROTATOR ---
+    const successMessages = [
+        "Your feelings have been logged. Keep it up!",
+        "Great job logging your thoughts. This is a positive step!",
+        "Entry saved! Taking a moment to reflect is always a good idea.",
+        "Logged and secure. Well done on checking in with yourself!"
+    ];
+
+    // --- STATE (to hold data) ---
+    let allLogs = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Get all HTML elements ---
+        const journalForm = document.getElementById('journal-form');
+        const journalEntry = document.getElementById('journal-entry');
+        const submitButton = document.getElementById('submit-button');
+        const statusMessage = document.getElementById('status-message');
+        const quoteText = document.getElementById('quote-text');
+        const logList = document.getElementById('log-list');
+        const monthSelect = document.getElementById('month-select');
+        const analysisSelect = document.getElementById('analysis-select');
+        const analysisContent = document.getElementById('analysis-content');
+        const alertBanner = document.getElementById('alert-banner');
+
+        // --- FEATURE 1: Set initial quote ---
+        quoteText.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+       
+        // --- SUBMIT ENTRY LOGIC (Write Path) ---
+        journalForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const entryText = journalEntry.value.trim();
+            if (!entryText) {
+                setStatus('Please write something.', 'error');
+                return;
+            }
+            setLoading(true);
+
+            const userId = 'demo-user';
+
+            fetch(API_URLS.submitEntry, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'entryText': entryText,
+                    'userId': userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+               
+                const randomSuccess = successMessages[Math.floor(Math.random() * successMessages.length)];
+                setStatus(randomSuccess, 'success');
+                journalEntry.value = "";
+               
+                // Refresh logs and analysis
+                fetchAllLogs();
+                loadAnalysis();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                setStatus('An error occurred. Please try again.', 'error');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+        });
+
+        // --- UTILITY FUNCTIONS ---
+        function setLoading(isLoading) {
+            submitButton.disabled = isLoading;
+            submitButton.classList.toggle('loading', isLoading);
+            submitButton.textContent = isLoading ? 'Saving...' : 'Log My Feelings';
+        }
+
+        function setStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = type;
+        }
+       
+        // --- FEATURE 4: LOAD AND DISPLAY LOGS (Read Path) ---
+
+        function formatLogDate(isoString) {
+            const date = new Date(isoString);
+            return {
+                day: date.toLocaleString('en-US', { weekday: 'long' }),
+                date: date.toLocaleString('en-US', { month: 'short', day: 'numeric' })
+            };
+        }
+       
+        function loadMonthDropdown() {
+            const months = new Set();
+            allLogs.forEach(log => {
+                const month = log.timestamp.substring(0, 7);
+                months.add(month);
+            });
+           
+            monthSelect.innerHTML = '';
+           
+            if (months.size === 0) {
+                 monthSelect.innerHTML = '<option>No logs yet</option>';
+                 return;
+            }
+           
+            // Sort months, newest first
+            const sortedMonths = Array.from(months).sort().reverse();
+           
+            sortedMonths.forEach(month => {
+                const d = new Date(month + "-02");
+                const monthText = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+               
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = monthText;
+                monthSelect.appendChild(option);
+            });
+           
+            monthSelect.addEventListener('change', loadEntriesByMonth);
+        }
+
+        async function fetchAllLogs() {
+            const userId = 'demo-user';
+            logList.innerHTML = '<li>Loading...</li>';
+           
+            try {
+                const response = await fetch(`${API_URLS.getEntries}?userId=${userId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`);
+                }
+               
+                allLogs = await response.json();
+               
+                loadMonthDropdown();
+                loadEntriesByMonth();
+               
+                // --- FEATURE 6: Run alert check ---
+                checkForAlerts(allLogs);
+
+            } catch (error) {
+                console.error("Error fetching logs:", error);
+                logList.innerHTML = '<li>Error loading logs.</li>';
+            }
+        }
+       
+        function loadEntriesByMonth() {
+            const selectedMonth = monthSelect.value;
+            logList.innerHTML = '';
+           
+            const logsForMonth = allLogs.filter(log => log.timestamp.startsWith(selectedMonth));
+           
+            if (logsForMonth.length === 0) {
+                logList.innerHTML = '<li>No entries for this month.</li>';
+                return;
+            }
+
+            // Note: allLogs is already sorted newest to oldest from the API
+            logsForMonth.forEach(log => {
+                const { day, date } = formatLogDate(log.timestamp);
+                const li = document.createElement('li');
+                li.dataset.timestamp = log.timestamp;
+               
+                li.innerHTML = `<span class="log-day">${day} (${log.sentiment})</span><span class="log-date">${date}</span>`;
+               
+                li.addEventListener('click', () => displayLogDetails(log.timestamp));
+               
+                logList.appendChild(li);
+            });
+        }
+       
+        function displayLogDetails(timestamp) {
+            const log = allLogs.find(l => l.timestamp === timestamp);
+            if (log) {
+                document.getElementById('journal-entry').value = log.text;
+                const { day, date } = formatLogDate(log.timestamp);
+                setStatus(`Viewing log from: ${day}, ${date}`, 'success');
+            }
+        }
+       
+        // --- FEATURE 5: ANALYSIS ---
+        async function loadAnalysis() {
+            const period = analysisSelect.value;
+            const userId = 'demo-user';
+           
+            analysisContent.innerHTML = "<p>Loading analysis...</p>";
+           
+            try {
+                const response = await fetch(`${API_URLS.getAnalysis}?userId=${userId}&period=${period}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch analysis: ${response.status} ${response.statusText}`);
+                }
+               
+                const data = await response.json();
+                const formattedSummary = data.summary.replace(/\n/g, '<br>');
+               
+                analysisContent.innerHTML = `
+                    <p>${formattedSummary}</p>
+                    <hr>
+                    <p><strong>Overall Trend: ${data.trend}</strong></p>
+                    <p><em>${data.encouragement}</em></p>
+                `;
+               
+            } catch (error) {
+                console.error("Error fetching analysis:", error);
+                analysisContent.innerHTML = '<p>Error loading analysis.</p>';
+            }
+        }
+       
+        // Add event listener to run analysis when the dropdown changes
+        analysisSelect.addEventListener('change', loadAnalysis);
+       
+        // --- FEATURE 6: FRONTEND ALERTS ---
+        function showAlert(message, color) {
+            alertBanner.textContent = message;
+            alertBanner.className = color; // 'orange' or 'red'
+            alertBanner.style.display = 'block';
+        }
+
+        function checkForAlerts(logs) {
+            if (logs.length < 2) return; // Not enough data for a streak
+
+            let negativeStreak = 0;
+            const processedDays = new Set(); // To count one entry per day
+            const today = new Date();
+           
+            // Logs are already sorted newest to oldest
+            for (const log of logs) {
+                const logDate = new Date(log.timestamp);
+                const dayKey = logDate.toDateString(); // "Wed Nov 08 2025"
+
+                // Stop checking after 10 days
+                const daysAgo = (today - logDate) / (1000 * 60 * 60 * 24);
+                if (daysAgo > 10) break;
+
+                // Skip if we already processed a log for this day
+                if (processedDays.has(dayKey)) continue;
+
+                if (log.sentiment === 'NEGATIVE' || log.sentiment === 'CRITICAL') {
+                    negativeStreak++;
+                    processedDays.add(dayKey); // Mark this day as processed
+                } else {
+                    // Streak is broken by a non-negative day
+                    break;
+                }
+            }
+           
+            // Show the banners based on the streak
+            if (negativeStreak >= 10) {
+                showAlert("Things don't seem to be going well lately, I suggest you seek professional help", 'red');
+            } else if (negativeStreak >= 2) {
+                showAlert("You have been in low spirits recently, are you feeling better today?", 'orange');
+            } else {
+                alertBanner.style.display = 'none'; // Hide banner if no streak
+            }
+        }
+       
+        // --- INITIAL LOAD ---
+        fetchAllLogs(); // Fetch all logs and trigger alert check
+        loadAnalysis(); // Load initial analysis for 'today'
+    });
+</script>
+</body>
+</html>
